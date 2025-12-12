@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decode Message - Lock & Hide</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-lock"></i>
+                <h1>Lock & Hide</h1>
+            </div>
+            <nav class="nav">
+                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('encode') }}"><i class="fas fa-lock"></i> Encode</a>
+                <a href="{{ url_for('decode') }}" class="active"><i class="fas fa-unlock"></i> Decode</a>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-unlock"></i> Decode Secret Message</h2>
+                <p>Reveal hidden messages from images using the correct password.</p>
+            </div>
+
+            <div class="decode-container">
+                <!-- Left: Form -->
+                <div class="decode-form">
+                    <form id="decodeForm" enctype="multipart/form-data">
+                        <!-- Image Upload -->
+                        <div class="form-group">
+                            <label for="imageUpload">
+                                <i class="fas fa-image"></i> Select Encoded Image
+                            </label>
+                            <div class="file-upload">
+                                <input type="file" id="imageUpload" name="image" accept=".png,.jpg,.jpeg,.bmp,.gif" required>
+                                <label for="imageUpload" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose encoded image</span>
+                                </label>
+                                <div class="file-info" id="fileInfo">No file selected</div>
+                            </div>
+                            <p class="help-text">Select an image that contains a hidden message</p>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label for="password">
+                                <i class="fas fa-key"></i> Enter Password
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="password" name="password" placeholder="Enter the password used for encoding" required>
+                                <button type="button" id="togglePassword" class="toggle-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="help-text">Enter the exact password used when encoding the message</p>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-secondary btn-block">
+                            <i class="fas fa-unlock"></i> Decode Message
+                        </button>
+                    </form>
+
+                    <div class="back-link">
+                        <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i> Back to Home</a>
+                    </div>
+                </div>
+
+                <!-- Right: Result -->
+                <div class="decode-result">
+                    <div class="result-box">
+                        <h3><i class="fas fa-search"></i> Decoded Message</h3>
+                        
+                        <!-- Preview -->
+                        <div class="image-preview" id="imagePreview">
+                            <i class="fas fa-image"></i>
+                            <p>Encoded image will appear here</p>
+                        </div>
+                        
+                        <!-- Result Display (hidden initially) -->
+                        <div class="message-display" id="messageDisplay" style="display: none;">
+                            <h4 id="resultTitle"></h4>
+                            <div class="message-content" id="messageContent">
+                                <!-- Message will appear here -->
+                            </div>
+                            
+                            <div class="result-actions">
+                                <button onclick="decodeAnother()" class="btn btn-outline">
+                                    <i class="fas fa-redo"></i> Decode Another
+                                </button>
+                                <button onclick="copyToClipboard()" class="btn btn-info" id="copyBtn">
+                                    <i class="fas fa-copy"></i> Copy Message
+                                </button>
+                            </div>
+                            
+                            <div class="result-tips" id="successTips" style="display: none;">
+                                <h5><i class="fas fa-shield-alt"></i> Security Tips:</h5>
+                                <ul>
+                                    <li>Keep the password and message confidential</li>
+                                    <li>Delete the encoded image after reading</li>
+                                    <li>Use different passwords for different messages</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Error Display -->
+                        <div class="error-display" id="errorDisplay" style="display: none;">
+                            <h4><i class="fas fa-exclamation-triangle error"></i> <span id="errorTitle"></span></h4>
+                            <p id="errorMessage"></p>
+                            <button onclick="tryAgain()" class="btn btn-outline">
+                                <i class="fas fa-redo"></i> Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Lock & Hide - Steganography Web Tool &copy; 2024</p>
+        </footer>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <div class="loader"></div>
+            <p>Decoding message...</p>
+        </div>
+    </div>
+
+    <script>
+        // File upload preview
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                fileInfo.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+                
+                // Hide any previous results
+                document.getElementById('messageDisplay').style.display = 'none';
+                document.getElementById('errorDisplay').style.display = 'none';
+            }
+        });
+
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        });
+
+        // Form submission
+        document.getElementById('decodeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const loadingModal = document.getElementById('loadingModal');
+            
+            // Show loading
+            loadingModal.style.display = 'flex';
+            
+            // Submit to server
+            fetch('/decode', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingModal.style.display = 'none';
+                
+                if (data.error) {
+                    showError('Decoding Error', data.error);
+                    return;
+                }
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                } else {
+                    showError('Failed to Decode', data.message);
+                }
+            })
+            .catch(error => {
+                loadingModal.style.display = 'none';
+                showError('Network Error', error.message);
+            });
+        });
+
+        function showSuccess(message) {
+            const messageDisplay = document.getElementById('messageDisplay');
+            const messageContent = document.getElementById('messageContent');
+            const resultTitle = document.getElementById('resultTitle');
+            const successTips = document.getElementById('successTips');
+            
+            resultTitle.innerHTML = '<i class="fas fa-check-circle success"></i> Message Found!';
+            messageContent.textContent = message;
+            messageDisplay.style.display = 'block';
+            successTips.style.display = 'block';
+            
+            // Hide error display
+            document.getElementById('errorDisplay').style.display = 'none';
+            
+            // Scroll to result
+            messageDisplay.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(title, message) {
+            const errorDisplay = document.getElementById('errorDisplay');
+            const errorTitle = document.getElementById('errorTitle');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorTitle.textContent = title;
+            errorMessage.textContent = message;
+            errorDisplay.style.display = 'block';
+            
+            // Hide success display
+            document.getElementById('messageDisplay').style.display = 'none';
+            
+            // Scroll to error
+            errorDisplay.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function decodeAnother() {
+            // Reset form
+            document.getElementById('decodeForm').reset();
+            document.getElementById('fileInfo').textContent = 'No file selected';
+            document.getElementById('imagePreview').innerHTML = '<i class="fas fa-image"></i><p>Encoded image will appear here</p>';
+            document.getElementById('messageDisplay').style.display = 'none';
+            document.getElementById('errorDisplay').style.display = 'none';
+        }
+
+        function tryAgain() {
+            document.getElementById('errorDisplay').style.display = 'none';
+            document.getElementById('password').focus();
+        }
+
+        function copyToClipboard() {
+            const message = document.getElementById('messageContent').textContent;
+            navigator.clipboard.writeText(message).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lock & Hide - Steganography Web Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-lock"></i>
+                <h1>Lock & Hide</h1>
+            </div>
+            <p class="subtitle">Hide Secret Messages Inside Images</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="hero">
+                <div class="hero-text">
+                    <h2>Secret Messaging Made Simple</h2>
+                    <p>Hide your confidential messages inside images using advanced steganography techniques. Only those with the password can reveal the hidden content.</p>
+                    
+                    <div class="features">
+                        <div class="feature">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Secure</h3>
+                            <p>Password-protected messages</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-image"></i>
+                            <h3>Discreet</h3>
+                            <p>Messages hidden in plain sight</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-bolt"></i>
+                            <h3>Fast</h3>
+                            <p>Encode/decode in seconds</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hero-image">
+                    <div style="background: linear-gradient(135deg, #3498db, #2c3e50); width: 100%; height: 300px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px;">
+                        <i class="fas fa-lock" style="font-size: 60px; margin-bottom: 20px;"></i>
+                        <h3 style="font-size: 24px; margin-bottom: 10px;">Steganography</h3>
+                        <p style="text-align: center;">Hide messages in image pixels</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{ url_for('encode') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-lock"></i> Encode Message
+                </a>
+                <a href="{{ url_for('decode') }}" class="btn btn-secondary btn-large">
+                    <i class="fas fa-unlock"></i> Decode Message
+                </a>
+            </div>
+
+            <!-- How It Works -->
+            <div class="how-it-works">
+                <h2><i class="fas fa-question-circle"></i> How It Works</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Upload Image</h3>
+                        <p>Select any image (PNG, JPG, etc.) to use as a carrier</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Enter Message</h3>
+                        <p>Type your secret message and set a password</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Encode</h3>
+                        <p>The message is hidden inside the image pixels</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>Share & Decode</h3>
+                        <p>Share the image. Only with correct password can the message be revealed</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="tips">
+                <h2><i class="fas fa-lightbulb"></i> Tips for Best Results</h2>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Use PNG format for highest quality</li>
+                    <li><i class="fas fa-check-circle"></i> Larger images can hold longer messages</li>
+                    <li><i class="fas fa-check-circle"></i> Remember your password - it cannot be recovered!</li>
+                    <li><i class="fas fa-check-circle"></i> The encoded image looks identical to the original</li>
+                </ul>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Lock & Hide - Steganography Web Tool &copy; 2024</p>
+            <p class="footer-links">
+                <a href="#" onclick="alert('Steganography is the practice of concealing a file, message, image, or video within another file, message, image, or video.')">
+                    <i class="fas fa-info-circle"></i> What is Steganography?
+                </a>
+                <a href="#" onclick="cleanupFiles()">
+                    <i class="fas fa-trash"></i> Cleanup Files
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function cleanupFiles() {
+            if (confirm('Clean up all uploaded files? This will remove all temporary images.')) {
+                fetch('/cleanup')
+                    .then(response => response.json())
+                    .then(data => alert(data.message))
+                    .catch(error => console.error('Error:', error));
+            }
+        }
+    </script>
+</body>
+</html>

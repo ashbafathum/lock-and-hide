@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encode Message - Lock & Hide</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-lock"></i>
+                <h1>Lock & Hide</h1>
+            </div>
+            <nav class="nav">
+                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('encode') }}" class="active"><i class="fas fa-lock"></i> Encode</a>
+                <a href="{{ url_for('decode') }}"><i class="fas fa-unlock"></i> Decode</a>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-lock"></i> Encode Secret Message</h2>
+                <p>Hide your message inside an image. Only those with the password can reveal it.</p>
+            </div>
+
+            <div class="encode-container">
+                <!-- Left: Form -->
+                <div class="encode-form">
+                    <form id="encodeForm" enctype="multipart/form-data">
+                        <!-- Image Upload -->
+                        <div class="form-group">
+                            <label for="imageUpload">
+                                <i class="fas fa-image"></i> Select Image
+                            </label>
+                            <div class="file-upload">
+                                <input type="file" id="imageUpload" name="image" accept=".png,.jpg,.jpeg,.bmp,.gif" required>
+                                <label for="imageUpload" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose an image file</span>
+                                </label>
+                                <div class="file-info" id="fileInfo">No file selected</div>
+                            </div>
+                            <p class="help-text">Supports PNG, JPG, JPEG, BMP, GIF (Max 16MB)</p>
+                        </div>
+
+                        <!-- Message Input -->
+                        <div class="form-group">
+                            <label for="message">
+                                <i class="fas fa-envelope"></i> Secret Message
+                            </label>
+                            <textarea id="message" name="message" rows="4" placeholder="Type your secret message here..." required></textarea>
+                            <div class="char-count">
+                                <span id="charCount">0</span> characters
+                                <span class="hint">(Max capacity depends on image size)</span>
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label for="password">
+                                <i class="fas fa-key"></i> Password
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="password" name="password" placeholder="Enter a strong password" required>
+                                <button type="button" id="togglePassword" class="toggle-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="help-text">Remember this password! You'll need it to decode the message.</p>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-lock"></i> Encode Message
+                        </button>
+                    </form>
+
+                    <div class="back-link">
+                        <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i> Back to Home</a>
+                    </div>
+                </div>
+
+                <!-- Right: Preview -->
+                <div class="encode-preview">
+                    <div class="preview-box">
+                        <h3><i class="fas fa-eye"></i> Preview</h3>
+                        <div class="image-preview" id="imagePreview">
+                            <i class="fas fa-image"></i>
+                            <p>Image will appear here</p>
+                        </div>
+                        
+                        <div class="preview-info" id="previewInfo">
+                            <p><i class="fas fa-info-circle"></i> Upload an image to see preview</p>
+                        </div>
+                        
+                        <!-- Result Section (hidden initially) -->
+                        <div class="result-section" id="resultSection" style="display: none;">
+                            <h4><i class="fas fa-check-circle success"></i> Message Encoded!</h4>
+                            <p>Your secret message has been hidden in the image.</p>
+                            
+                            <div class="encoded-preview" id="encodedPreview">
+                                <!-- Encoded image will appear here -->
+                            </div>
+                            
+                            <div class="result-actions">
+                                <a href="#" id="downloadBtn" class="btn btn-success">
+                                    <i class="fas fa-download"></i> Download Encoded Image
+                                </a>
+                                <button onclick="encodeAnother()" class="btn btn-outline">
+                                    <i class="fas fa-redo"></i> Encode Another
+                                </button>
+                            </div>
+                            
+                            <div class="result-tips">
+                                <h5><i class="fas fa-lightbulb"></i> Next Steps:</h5>
+                                <ul>
+                                    <li>Share the downloaded image securely</li>
+                                    <li>Tell the recipient the password separately</li>
+                                    <li>Use our <a href="{{ url_for('decode') }}">Decode page</a> to reveal the message</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Lock & Hide - Steganography Web Tool &copy; 2024</p>
+        </footer>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <div class="loader"></div>
+            <p>Encoding your message...</p>
+        </div>
+    </div>
+
+    <script>
+        // File upload preview
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                fileInfo.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Character count
+        document.getElementById('message').addEventListener('input', function(e) {
+            document.getElementById('charCount').textContent = e.target.value.length;
+        });
+
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        });
+
+        // Form submission
+        document.getElementById('encodeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const loadingModal = document.getElementById('loadingModal');
+            
+            // Show loading
+            loadingModal.style.display = 'flex';
+            
+            // Submit to server
+            fetch('/encode', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingModal.style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                if (data.success) {
+                    // Show result section
+                    document.getElementById('resultSection').style.display = 'block';
+                    
+                    // Show encoded image preview
+                    const encodedPreview = document.getElementById('encodedPreview');
+                    encodedPreview.innerHTML = `<img src="data:image/png;base64,${data.preview}" alt="Encoded Image">`;
+                    
+                    // Set up download button
+                    document.getElementById('downloadBtn').href = `/download/${data.filename}`;
+                    
+                    // Scroll to result
+                    encodedPreview.scrollIntoView({ behavior: 'smooth' });
+                }
+            })
+            .catch(error => {
+                loadingModal.style.display = 'none';
+                alert('An error occurred: ' + error.message);
+            });
+        });
+
+        function encodeAnother() {
+            // Reset form
+            document.getElementById('encodeForm').reset();
+            document.getElementById('fileInfo').textContent = 'No file selected';
+            document.getElementById('imagePreview').innerHTML = '<i class="fas fa-image"></i><p>Image will appear here</p>';
+            document.getElementById('charCount').textContent = '0';
+            document.getElementById('resultSection').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
